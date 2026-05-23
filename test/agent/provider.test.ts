@@ -45,29 +45,41 @@ describe("LLM Provider", () => {
     expect(result.finishReason).toBe("stop");
   });
 
-  it("accumulates tool_calls deltas from stream", async () => {
+  it("returns tool calls when response contains function calls", async () => {
     const provider = createProvider({ apiKey: "test-key" });
 
     mockCreate.mockResolvedValue(makeStream([
       {
+        type: "response.output_item.added",
+        output_index: 0,
+        item: { type: "function_call", name: "file", id: "call_1" },
+      },
+      {
         type: "response.function_call_arguments.delta",
-        delta: '{"file":',
-        item_id: "call_1",
+        delta: '{"act',
         output_index: 0,
       },
       {
         type: "response.function_call_arguments.delta",
-        delta: ' "/test.txt"}',
-        item_id: "call_1",
+        delta: 'ion": "read", "file": "test.txt"}',
         output_index: 0,
       },
-      { type: "response.completed", response: { status: "completed" } },
+      {
+        type: "response.completed",
+        response: { status: "completed" },
+      },
     ]));
 
     const result = await provider.stream(
-      [{ role: "user", content: "read file" }],
+      [{ role: "user", content: "read file test.txt" }],
     );
 
-    expect(result.finishReason).toBe("stop");
+    expect(result.finishReason).toBe("tool_calls");
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls![0]).toEqual({
+      id: "call_1",
+      type: "function",
+      function: { name: "file", arguments: '{"action": "read", "file": "test.txt"}' },
+    });
   });
 });

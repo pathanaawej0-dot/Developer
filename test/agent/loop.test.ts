@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createEventBus } from "../../src/event-bus/index.js";
 import { createSessionStore } from "../../src/session-store/index.js";
+import { createToolRegistry } from "../../src/tools/registry.js";
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -64,25 +65,109 @@ describe("Agent Loop", () => {
     expect(loaded.messages[1]).toMatchObject({ role: "assistant", content: "Hello world" });
   });
 
-  it("handles finish_reason tool_calls without crashing", async () => {
+  it("dispatches tool calls and saves results", async () => {
     const eventBus = createEventBus();
     const store = createSessionStore(tmpDir());
     const session = await store.createSession();
-    const provider = makeFakeProvider({
-      content: "",
-      finishReason: "tool_calls",
-      toolCalls: [{
-        id: "call_1",
-        type: "function",
-        function: { name: "read_file", arguments: '{"file": "/test.txt"}' },
-      }],
+    const registry = createToolRegistry();
+
+    registry.register({
+      name: "greeter",
+      description: "Say hello",
+      parameters: { type: "object", properties: { name: { type: "string" } } },
+      async execute(args) {
+        return `Hello, ${args.name}!`;
+      },
     });
 
-    const agent = createAgent({ provider, eventBus, sessionStore: store, sessionId: session.id });
-    await expect(agent.run("call a tool")).resolves.toBeUndefined();
+    const callCount = vi.fn();
+    const provider: Provider = {
+      async stream(
+        _messages: ChatCompletionMessageParam[],
+        callbacks?: StreamCallbacks,
+        _tools?: unknown[],
+      ) {
+        callCount();
+        return {
+          content: "",
+          finishReason: "tool_calls",
+          toolCalls: [{
+            id: "call_1",
+            type: "function",
+            function: { name: "greeter", arguments: '{"name": "World"}' },
+          }],
+        };
+      },
+    };
+
+    const toolResults: string[] = [];
+    eventBus.subscribe("tool:end", (p) => toolResults.push(String(p.result)));
+
+    const agent = createAgent({
+      provider,
+      eventBus,
+      sessionStore: store,
+      sessionId: session.id,
+      registry,
+      maxTurns: 3,
+    });
+    await agent.run("say hello");
 
     const loaded = await store.loadSession(session.id);
-    expect(loaded.messages).toHaveLength(1);
-    expect(loaded.messages[0]).toMatchObject({ role: "user", content: "call a tool" });
+    const msgs = loaded.messages;
+    expect(msgs[0]).toMatchObject({ role: "user", content: "say hello" });
+    expect(msgs[1]).toMatchObject({ role: "assistant", content: "" });
+    expect(msgs[2]).toMatchObject({ role: "tool", content: "Hello, World!" });
+  });
+
+  it("executes multiple parallel tool calls concurrently", async () => {
+    const eventBus = createEventBus();
+    const store = createSessionStore(tmpDir());
+    const session = await store.createSession();
+    const registry = createToolRegistry();
+    let callCount = 0;
+
+    registry.register({
+      name: "echo",
+      description: "Echo",
+      parameters: { type: "object", properties: { msg: { type: "string" } } },
+      async execute(args) {
+        return String(args.msg ?? "");
+      },
+    });
+
+    const provider: Provider = {
+      async stream(
+        _messages: ChatCompletionMessageParam[],
+        _callbacks?: StreamCallbacks,
+        _tools?: unknown[],
+      ) {
+        callCount++;
+        if (callCount > 1) {
+          return { content: "done", finishReason: "stop" };
+        }
+        return {
+          content: "",
+          finishReason: "tool_calls",
+          toolCalls: [
+            { id: "c1", type: "function", function: { name: "echo", arguments: '{"msg":"a"}' } },
+            { id: "c2", type: "function", function: { name: "echo", arguments: '{"msg":"b"}' } },
+          ],
+        };
+      },
+    };
+
+    const agent = createAgent({
+      provider,
+      eventBus,
+      sessionStore: store,
+      sessionId: session.id,
+      registry,
+    });
+    await agent.run("do two things");
+
+    const loaded = await store.loadSession(session.id);
+    const toolMsgs = loaded.messages.filter((m) => m.role === "tool");
+    expect(toolMsgs).toHaveLength(2);
   });
 });

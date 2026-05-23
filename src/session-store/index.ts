@@ -3,11 +3,18 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { v4 as uuid } from "uuid";
 
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
 export interface Message {
   role: "user" | "assistant" | "tool";
   content: string;
   tool_call_id?: string;
   name?: string;
+  tool_calls?: ToolCall[];
 }
 
 export interface Session {

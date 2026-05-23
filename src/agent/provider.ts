@@ -36,10 +36,19 @@ function messagesToInput(messages: ChatCompletionMessageParam[]) {
   const systemMessages = messages.filter((m) => m.role === "system");
   const rest = messages.filter((m) => m.role !== "system");
   const instructions = systemMessages.map((m) => m.content).join("\n");
-  const input = rest.map((m) => ({
-    role: m.role as "user" | "assistant",
-    content: typeof m.content === "string" ? m.content : "",
-  }));
+  const input = rest.map((m) => {
+    if (m.role === "tool") {
+      return {
+        type: "function_call_output" as const,
+        call_id: m.tool_call_id ?? "",
+        output: m.content,
+      };
+    }
+    return {
+      role: m.role as "user" | "assistant",
+      content: typeof m.content === "string" ? m.content : "",
+    };
+  });
   return {
     input,
     ...(instructions ? { instructions } : {}),
@@ -89,10 +98,30 @@ export function createProvider(config?: ProviderConfig): Provider {
             }
             break;
           }
+          case "response.output_item.added": {
+            const oe = event as { output_index: number; item: { type: string; name?: string; id: string } };
+            if (oe.item?.type === "function_call") {
+              toolCallsMap.set(oe.output_index, {
+                id: oe.item.id,
+                type: "function",
+                function: { name: oe.item.name ?? "", arguments: "" },
+              });
+            }
+            break;
+          }
+          case "response.function_call_arguments.delta": {
+            const fe = event as { delta: string; output_index: number };
+            const entry = toolCallsMap.get(fe.output_index);
+            if (entry) {
+              entry.function.arguments += fe.delta;
+            }
+            break;
+          }
           case "response.completed": {
-            const resp = (event as { response: { status?: string } }).response;
-            if (resp?.status === "completed") {
-              finishReason = "stop";
+            const ce = event as { response: { status?: string; output?: { type: string }[] } };
+            finishReason = "stop";
+            if (ce.response?.status === "completed" && toolCallsMap.size > 0) {
+              finishReason = "tool_calls";
             }
             break;
           }
