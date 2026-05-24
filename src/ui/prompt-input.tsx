@@ -1,4 +1,4 @@
-import { Box, Text, useStdin } from "ink";
+import { Box, Text, useStdin, useStdout } from "ink";
 import { useLayoutEffect, useRef, useState, type FC } from "react";
 
 interface PromptInputProps {
@@ -10,9 +10,13 @@ interface PromptInputProps {
 function parseInput(data: string) {
   const key = { return: false, shift: false, backspace: false, delete: false, ctrl: false, meta: false };
 
-  if (data === "\r" || data === "\n") {
+  if (data === "\r") {
     key.return = true;
     return { input: "", key };
+  }
+
+  if (data === "\n") {
+    return { input: "\n", key };
   }
 
   if (data === "\b" || data === "\x7f") {
@@ -56,6 +60,9 @@ export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, 
   const [displayValue, setDisplayValue] = useState("");
   const valueRef = useRef("");
   const { setRawMode, internal_eventEmitter } = useStdin();
+  const { stdout } = useStdout();
+  const columns = stdout?.columns ?? 40;
+  const separator = "─".repeat(columns);
 
   useLayoutEffect(() => {
     setRawMode(true);
@@ -65,19 +72,13 @@ export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, 
 
       const { input, key } = parseInput(data);
 
-      if (key.return && !key.shift) {
+      if (key.return) {
         const trimmed = valueRef.current.trim();
         if (trimmed) {
           onSubmit(trimmed);
           valueRef.current = "";
           setDisplayValue("");
         }
-        return;
-      }
-
-      if (key.return && key.shift) {
-        valueRef.current += "\n";
-        setDisplayValue(valueRef.current);
         return;
       }
 
@@ -102,12 +103,17 @@ export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, 
   }, [disabled, onSubmit, setRawMode, internal_eventEmitter]);
 
   return (
-    <Box>
-      {displayValue ? (
-        <Text>{displayValue}</Text>
-      ) : (
-        <Text dimColor>{placeholder}</Text>
-      )}
+    <Box flexDirection="column">
+      <Text dimColor>{separator}</Text>
+      <Box>
+        <Text color="cyan">{"> "}</Text>
+        {displayValue ? (
+          <Text>{displayValue}</Text>
+        ) : (
+          <Text dimColor>{placeholder}</Text>
+        )}
+      </Box>
+      <Text dimColor>{separator}</Text>
     </Box>
   );
 };

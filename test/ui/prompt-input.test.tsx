@@ -88,4 +88,79 @@ describe("PromptInput", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
+  it("Ctrl+J inserts newline instead of submitting", () => {
+    const onSubmit = vi.fn();
+    const { stdin, lastFrame } = render(<PromptInput onSubmit={onSubmit} />);
+
+    stdin.write("line1");
+    stdin.write("\n");
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(lastFrame()).toContain("line1");
+  });
+
+  it("Ctrl+J then Enter submits text with newline", () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(<PromptInput onSubmit={onSubmit} />);
+
+    stdin.write("line1");
+    stdin.write("\n");
+    stdin.write("line2");
+    stdin.write("\r");
+
+    expect(onSubmit).toHaveBeenCalledWith("line1\nline2");
+  });
+
+  it("other ctrl keys like Ctrl+C do not submit or add to value", () => {
+    const onSubmit = vi.fn();
+    const { stdin, lastFrame } = render(<PromptInput onSubmit={onSubmit} />);
+
+    stdin.write("hello");
+    stdin.write("\x03");
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(lastFrame()).toContain("hello");
+    expect(lastFrame()).not.toContain("\x03");
+  });
+
+  it("only Enter submits, not random keystrokes or ctrl keys", () => {
+    const onSubmit = vi.fn();
+    const { stdin } = render(<PromptInput onSubmit={onSubmit} />);
+
+    stdin.write("\x01");
+    stdin.write("\x02");
+    stdin.write("\x05");
+    stdin.write("\x0b");
+    stdin.write("\x0c");
+    stdin.write("\x0e");
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("renders > prompt icon", () => {
+    const onSubmit = vi.fn();
+    const { lastFrame } = render(<PromptInput onSubmit={onSubmit} />);
+
+    const frame = lastFrame();
+    expect(frame).toContain(">");
+  });
+
+  it("renders separator lines above and below", () => {
+    const onSubmit = vi.fn();
+    const { lastFrame } = render(<PromptInput onSubmit={onSubmit} />);
+
+    const frame = lastFrame();
+    expect(frame).toContain("─");
+  });
+
+  it("shows typed content after > prompt", () => {
+    const onSubmit = vi.fn();
+    const { stdin, lastFrame } = render(<PromptInput onSubmit={onSubmit} />);
+
+    stdin.write("hello world");
+
+    const frame = lastFrame();
+    expect(frame).toContain("> hello world");
+  });
+
 });
