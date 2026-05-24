@@ -120,6 +120,93 @@ describe("Agent Loop", () => {
     expect(msgs[2]).toMatchObject({ role: "tool", content: "Hello, World!" });
   });
 
+  it("trims messages and retries on context overflow error", async () => {
+    const eventBus = createEventBus();
+    const store = createSessionStore(tmpDir());
+    const session = await store.createSession();
+    let callCount = 0;
+
+    const overflowingProvider: Provider = {
+      async stream() {
+        callCount++;
+        if (callCount === 1) {
+          throw new Error("This model's maximum context length is 32768 tokens. Reduce the number of messages.");
+        }
+        return { content: "Success after retry", finishReason: "stop" };
+      },
+    };
+
+    const agent = createAgent({
+      provider: overflowingProvider,
+      eventBus,
+      sessionStore: store,
+      sessionId: session.id,
+    });
+
+    await agent.run("test prompt");
+
+    expect(callCount).toBe(2);
+    const loaded = await store.loadSession(session.id);
+    expect(loaded.messages[1]).toMatchObject({ role: "assistant", content: "Success after retry" });
+  });
+
+  it("stops after second consecutive context overflow error", async () => {
+    const eventBus = createEventBus();
+    const store = createSessionStore(tmpDir());
+    const session = await store.createSession();
+    let callCount = 0;
+
+    const failingProvider: Provider = {
+      async stream() {
+        callCount++;
+        throw new Error("This model's maximum context length is 32768 tokens. Reduce the number of messages.");
+      },
+    };
+
+    const errors: Error[] = [];
+    eventBus.subscribe("error", (p) => errors.push(p.error));
+
+    const agent = createAgent({
+      provider: failingProvider,
+      eventBus,
+      sessionStore: store,
+      sessionId: session.id,
+    });
+
+    await agent.run("test prompt");
+
+    expect(callCount).toBe(2);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toContain("context length");
+  });
+
+  it("does not crash on provider error, emits error event instead", async () => {
+    const eventBus = createEventBus();
+    const store = createSessionStore(tmpDir());
+    const session = await store.createSession();
+
+    const errorProvider: Provider = {
+      async stream() {
+        throw new Error("Provider failure");
+      },
+    };
+
+    const errors: Error[] = [];
+    eventBus.subscribe("error", (p) => errors.push(p.error));
+
+    const agent = createAgent({
+      provider: errorProvider,
+      eventBus,
+      sessionStore: store,
+      sessionId: session.id,
+    });
+
+    await agent.run("test prompt");
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toBe("Provider failure");
+  });
+
   it("executes multiple parallel tool calls concurrently", async () => {
     const eventBus = createEventBus();
     const store = createSessionStore(tmpDir());

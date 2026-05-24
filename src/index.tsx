@@ -27,6 +27,10 @@ async function main() {
     session = await sessionStore.createSession();
   }
 
+  if (!process.env.KILO_API_KEY) {
+    console.error("Warning: KILO_API_KEY not set. Running in anonymous mode with free models (rate limited to 200 req/hr).");
+  }
+
   const provider = createProvider({ model: flags.model });
   const registry = createToolRegistry();
 

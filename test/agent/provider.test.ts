@@ -21,8 +21,10 @@ async function* makeStream(events: unknown[]) {
 }
 
 describe("LLM Provider", () => {
-  it("throws a clear error when API key is missing", () => {
-    expect(() => createProvider({ apiKey: "" })).toThrow("KILO_API_KEY");
+  it("allows anonymous access when API key is missing", () => {
+    const provider = createProvider({ apiKey: "" });
+    expect(provider).toBeDefined();
+    expect(provider.stream).toBeDefined();
   });
 
   it("streams text tokens via onToken callback", async () => {

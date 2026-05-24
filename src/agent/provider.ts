@@ -56,12 +56,7 @@ function messagesToInput(messages: ChatCompletionMessageParam[]) {
 }
 
 export function createProvider(config?: ProviderConfig): Provider {
-  const apiKey = config?.apiKey || process.env.KILO_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "KILO_API_KEY is required. Set the KILO_API_KEY environment variable or pass apiKey in config.",
-    );
-  }
+  const apiKey = config?.apiKey || process.env.KILO_API_KEY || "";
 
   const client = new OpenAI({
     apiKey,

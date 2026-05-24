@@ -82,6 +82,14 @@ export function createSessionStore(sessionsDir?: string) {
       });
     },
 
+    async replaceMessages(id: string, messages: Message[]): Promise<Session> {
+      const session = await this.loadSession(id);
+      session.messages = messages;
+      session.updatedAt = new Date().toISOString();
+      writeFileSync(pathFor(id), JSON.stringify(session, null, 2));
+      return session;
+    },
+
     async deleteSession(id: string): Promise<void> {
       const filePath = pathFor(id);
       if (!existsSync(filePath)) {
