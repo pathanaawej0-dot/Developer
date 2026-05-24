@@ -42,7 +42,12 @@ export function createToolRegistry(): ToolRegistry {
       if (!handler) {
         return `Unknown tool: ${name}`;
       }
-      return handler.execute(args);
+      try {
+        return await handler.execute(args);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return `Error: ${msg}`;
+      }
     },
   };
 }

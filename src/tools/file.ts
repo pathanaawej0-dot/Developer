@@ -19,6 +19,9 @@ export function createFileTool(config?: FileToolConfig): ToolHandler {
 
   async function handleRead(args: Record<string, unknown>): Promise<string> {
     const filePath = resolvePath(String(args.path ?? ""));
+    if (statSync(filePath, { throwIfNoEntry: false })?.isDirectory()) {
+      return `${filePath} is a directory`;
+    }
     const fd = openSync(filePath, "r");
     const buf = Buffer.alloc(4096);
     const bytesRead = readSync(fd, buf, 0, 4096, 0);
