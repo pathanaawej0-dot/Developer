@@ -32,7 +32,7 @@ The output of a tool execution, returned as a plain string in the conversation. 
 _Avoid_: isError, tool error
 
 **Turn limit**:
-Unlimited by default — the agent runs tool calls until it decides to respond or the user interrupts. A `--max-turns` flag can optionally cap this for non-interactive use.
+Unlimited by default — the agent runs tool calls until it decides to respond or the user interrupts.
 
 **Output cap**:
 Tool output is truncated at 10,000 characters. If a `bash` command produces more, only the first 10K chars are returned with `\n[output truncated]`.

@@ -83,15 +83,16 @@ developer/
 
 ---
 
-## Entry Point (`src/index.ts`)
+## Entry Point (`src/index.tsx`)
 
 ```
-parse CLI flags (--max-turns, --model, --session)
+parse CLI flags (--model, --session)
 → load or create session
-→ render <App> with Ink
+→ create provider, registry, agent
+→ render <App> with Ink, pass onSubmit callback
 ```
 
-The entry is minimal. It parses optional CLI args, initializes the session store, and passes an `Agent` instance into Ink's context. Ink takes over the terminal until the user exits.
+The entry is minimal. It parses optional CLI args, initializes the session store and agent, and passes an `onSubmit` callback to Ink's `<App>`. Ink takes over the terminal until the user exits.
 
 ---
 
@@ -123,7 +124,7 @@ runAgent(prompt: string):
          c. emit("agent:done")
          d. return
 
-  (unlimited turns — no counter unless --max-turns is set)
+  (unlimited turns — the agent loops until it responds)
 ```
 
 ### Streaming details
@@ -279,7 +280,7 @@ const client = new OpenAI({
 
 async function streamCompletion(messages, tools, onToken, onToolCalls, onFinish):
   const stream = await client.chat.completions.create({
-    model: "deepseek/deepseek-v4-flash",
+    model: "x-ai/grok-code-fast-1:optimized:free",
     messages,
     tools: tools.length > 0 ? tools : undefined,
     tool_choice: "auto",
@@ -380,7 +381,7 @@ Messages are appended incrementally — the file is rewritten on every save (ses
 - Empty submit is ignored
 
 ### `status-bar.tsx` — Footer
-- Left: model name (`deepseek-v4-flash`)
+- Left: model name (`x-ai/grok-code-fast-1:optimized:free`)
 - Center: status text (`idle`, `thinking`, `running tool: bash`, `streaming`)
 - Right: token count (session total), keyboard shortcut hints
 
@@ -412,7 +413,6 @@ React components subscribe via a context provider. The agent loop emits into the
 | Tool | Invalid args, file not found, permission denied | Return error string as tool result (plain text) |
 | Tool | Crash (uncaught exception in handler) | Catch, return `"Error: {message}"` as tool result |
 | Agent loop | Message too long (context overflow) | Auto-trim oldest messages, retry once |
-| Agent loop | Maximum turns reached (if `--max-turns` set) | Force text response: "Maximum turns reached" |
 | UI | Render error | Ink error boundary, show fallback |
 
 ---
@@ -425,8 +425,7 @@ Minimal config — environment variables and CLI flags:
 |--------|-----|---------|-------------|
 | Env | `KILO_API_KEY` | — | Required. Kilo Gateway API key |
 | Env | `KILO_BASE_URL` | `https://api.kilo.ai/api/gateway` | API endpoint |
-| CLI | `--model` | `deepseek/deepseek-v4-flash` | Model ID |
-| CLI | `--max-turns` | unlimited | Cap on agentic turns |
+| CLI | `--model` | `x-ai/grok-code-fast-1:optimized:free` | Model ID |
 | CLI | `--session` | auto-create | Resume a saved session ID |
 
 No config file for MVP. Can add `opencode.json`-style config later.

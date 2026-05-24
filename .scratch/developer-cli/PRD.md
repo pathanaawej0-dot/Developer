@@ -20,9 +20,7 @@ A single Node.js process running an Ink-based terminal UI that hosts an agent lo
 
 5. As a developer, I want the agent to make unlimited turns by default, so that long multi-step tasks complete without interruption.
 
-6. As a developer, I want to cap turns with `--max-turns`, so that non-interactive usage has a cost ceiling.
-
-7. As a developer, I want the file tool to read files with line numbers, so that I can reference specific lines in my prompts.
+6. As a developer, I want the file tool to read files with line numbers, so that I can reference specific lines in my prompts.
 
 8. As a developer, I want the file tool to write files (creating parent directories if needed), so that the agent can scaffold or modify code.
 
@@ -76,9 +74,9 @@ A single Node.js process running an Ink-based terminal UI that hosts an agent lo
 
 The implementation is split into 11 modules:
 
-1. **CLI Entry** (`src/index.ts`) — Parse CLI flags (`--max-turns`, `--model`, `--session`), initialize session store, render `<App>` via Ink. Minimal bootstrap.
+1. **CLI Entry** (`src/index.tsx`) — Parse CLI flags (`--model`, `--session`), initialize session store, create agent and tools, render `<App>` via Ink. Minimal bootstrap.
 
-2. **Agent Loop** (`src/agent/loop.ts`) — Owns the message array. Drives the prompt → LLM → tool_calls → repeat cycle. Emits events into the shared bus. Handles context trimming on overflow. Unlimited turns by default, optional `--max-turns` cap.
+2. **Agent Loop** (`src/agent/loop.ts`) — Owns the message array. Drives the prompt → LLM → tool_calls → repeat cycle. Emits events into the shared bus. Handles context trimming on overflow. Unlimited turns by default.
 
 3. **LLM Provider** (`src/agent/provider.ts`) — Wraps OpenAI Node SDK pointed at `https://api.kilo.ai/api/gateway`. Streams SSE events, accumulates text deltas and `tool_calls` deltas. Thin layer — the agent loop drives it.
 
@@ -122,7 +120,7 @@ The implementation is split into 11 modules:
 
 All modules should be tested, focusing on external behavior rather than implementation details:
 
-- **Agent Loop** — Test that a prompt produces the correct sequence: stream tokens, execute tools on `tool_calls` finish, loop back. Mock the provider. Verify context trimming fires at the right threshold. Verify `--max-turns` terminates the loop.
+- **Agent Loop** — Test that a prompt produces the correct sequence: stream tokens, execute tools on `tool_calls` finish, loop back. Mock the provider. Verify context trimming fires at the right threshold.
 - **LLM Provider** — Test that SSE chunks are correctly accumulated into text and tool_call deltas. Test error cases: network failure, auth error, malformed chunks.
 - **Tool Registry** — Test that `dispatch` returns the right handler, that unknown names produce an error string, that `getToolDefinitions` returns valid JSON Schema.
 - **File Tool** — Test each action independently: read with line numbers, read binary detection, write creating parent dirs, edit with exact match (success, not found, multiple matches), glob with patterns, grep with include filters.
@@ -152,4 +150,3 @@ No existing tests in the codebase (greenfield project). Tests should follow stan
 - The project draws inspiration from OpenCode (unlimited turns, Ink TUI, event bus) and OpenClaw (bash tool with yieldMs/background, process tool with list/poll/log/write/kill/clear).
 - Kilo Gateway provides native OpenAI-compatible tool calling with auto-repair (deduplication, orphan cleanup). The OpenAI Node SDK works directly with a `baseURL` override.
 - DeepSeek V4 Flash: 284B total / 13B active params, 1M context, full native tool calling, OpenAI-compatible format, supports thinking mode.
-- The `--max-turns` flag is listed in the CLI flags but marked as "future consideration" in research docs — implement it from the start as it's required by user stories.

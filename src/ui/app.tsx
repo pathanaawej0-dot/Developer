@@ -9,13 +9,14 @@ import { StatusBar, type AgentStatus } from "./status-bar.js";
 interface AppProps {
   eventBus: EventBus;
   modelName?: string;
+  onSubmit?: (value: string) => void;
 }
 
 function isBusy(status: AgentStatus): boolean {
   return status === "thinking" || status === "streaming" || status === "running";
 }
 
-const App: FC<AppProps> = ({ eventBus, modelName = "deepseek-v4-flash" }) => {
+const App: FC<AppProps> = ({ eventBus, modelName = "x-ai/grok-code-fast-1:optimized:free", onSubmit }) => {
   const [status, setStatus] = useState<AgentStatus>("idle");
   const [toolName, setToolName] = useState<string | undefined>();
   const [tokenCount, setTokenCount] = useState(0);
@@ -62,7 +63,7 @@ const App: FC<AppProps> = ({ eventBus, modelName = "deepseek-v4-flash" }) => {
   }, [eventBus]);
 
   const handleSubmit = (value: string) => {
-    eventBus.emit("agent:thinking", { message: value });
+    onSubmit?.(value);
   };
 
   return (

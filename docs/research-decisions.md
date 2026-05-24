@@ -70,7 +70,6 @@ A practice project: a Claude Code-inspired CLI coding agent. Named **developer**
 - If `finish_reason: "tool_calls"` → execute tool(s) → append results → loop
 - If text response → render in Ink. Turn complete.
 - **Unlimited turns** by default (both Claude Code and OpenCode use this)
-- Optional `--max-turns` flag for non-interactive cost control
 - Streaming enabled (SSE from Kilo Gateway)
 
 ### 10. Output Cap
@@ -93,7 +92,7 @@ A practice project: a Claude Code-inspired CLI coding agent. Named **developer**
 ### 13. LLM Provider
 - **Kilo Gateway** at `https://api.kilo.ai/api/gateway`
 - OpenAI-compatible API (OpenAI Node SDK with base URL override)
-- Model: `deepseek/deepseek-v4-flash` (Kilo format)
+- Model: `x-ai/grok-code-fast-1:optimized:free`
 - Native `tools`/`tool_choice`/`tool_calls` support — standard agent loop
 
 ### 14. Platform
@@ -113,7 +112,6 @@ A practice project: a Claude Code-inspired CLI coding agent. Named **developer**
 
 ## Future Considerations (not MVP)
 
-- `--max-turns` CLI flag
 - Slash commands (`/help`, `/clear`, `/sessions`, `/exit`)
 - Context compaction (when history grows large)
 - `DEVELOPER.md` project context auto-injection

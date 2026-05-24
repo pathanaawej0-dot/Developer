@@ -5,10 +5,12 @@ import { StatusBar } from "../../src/ui/status-bar.js";
 describe("StatusBar", () => {
   it("shows model name on the left", () => {
     const { lastFrame } = render(
-      <StatusBar modelName="deepseek-v4-flash" status="idle" />,
+      <StatusBar modelName="x-ai/grok-code-fast-1:optimized:free" status="idle" />,
     );
 
-    expect(lastFrame()).toContain("deepseek-v4-flash");
+    const frame = lastFrame();
+    expect(frame).toContain("x-ai");
+    expect(frame).toContain("optimized");
   });
 
   it("shows idle status in center", () => {

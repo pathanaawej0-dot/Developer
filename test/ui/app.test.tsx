@@ -1,5 +1,5 @@
 import { render } from "ink-testing-library";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { act } from "react";
 import App from "../../src/ui/app.js";
 import { createEventBus } from "../../src/event-bus/index.js";
@@ -11,8 +11,33 @@ describe("App", () => {
 
     const frame = lastFrame();
     expect(frame).toContain("Ask me anything...");
-    expect(frame).toContain("deepseek-v4-flash");
     expect(frame).toContain("idle");
+  });
+
+  it("calls onSubmit callback when user submits a prompt", () => {
+    const bus = createEventBus();
+    const onSubmit = vi.fn();
+    const { stdin } = render(<App eventBus={bus} onSubmit={onSubmit} />);
+
+    stdin.write("hello");
+    stdin.write("\r");
+
+    expect(onSubmit).toHaveBeenCalledWith("hello");
+  });
+
+  it("shows model name passed as prop in status bar", () => {
+    const bus = createEventBus();
+    const { lastFrame } = render(<App eventBus={bus} modelName="custom-model" />);
+
+    expect(lastFrame()).toContain("custom-model");
+  });
+
+  it("defaults model name", () => {
+    const bus = createEventBus();
+    const { lastFrame } = render(<App eventBus={bus} />);
+
+    const frame = lastFrame();
+    expect(frame).toContain("optimized");
   });
 
   it("updates status bar on agent events", () => {
@@ -92,5 +117,16 @@ describe("App", () => {
     }
 
     expect(lastFrame()).toContain("5 tokens");
+  });
+
+  it("does not crash when no onSubmit provided", () => {
+    const bus = createEventBus();
+    const { stdin, lastFrame } = render(<App eventBus={bus} />);
+
+    stdin.write("hello");
+    stdin.write("\r");
+
+    const frame = lastFrame();
+    expect(frame).toContain("idle");
   });
 });
