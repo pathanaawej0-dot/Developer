@@ -1,9 +1,13 @@
-import { Box, useInput } from "ink";
+import { Box } from "ink";
 import { useState, useLayoutEffect, type FC } from "react";
 import { useEventBus } from "../event-bus/index.js";
 import { Message } from "./message.js";
 import { ToolCard, ToolCardToggleProvider } from "./tool-card.js";
 import type { ToolStatus } from "./tool-card.js";
+
+interface MessageListProps {
+  toggleAllSignal?: number;
+}
 
 type DisplayItem =
   | { kind: "user"; content: string }
@@ -12,16 +16,9 @@ type DisplayItem =
 
 let toolIdCounter = 0;
 
-export const MessageList: FC = () => {
+export const MessageList: FC<MessageListProps> = ({ toggleAllSignal = 0 }) => {
   const bus = useEventBus();
   const [items, setItems] = useState<DisplayItem[]>([]);
-  const [toggleAllSignal, setToggleAllSignal] = useState(0);
-
-  useInput((_input, key) => {
-    if (key.ctrl && _input === "o") {
-      setToggleAllSignal((v) => v + 1);
-    }
-  });
 
   useLayoutEffect(() => {
     const unsubs: (() => void)[] = [];
