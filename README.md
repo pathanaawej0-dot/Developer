@@ -60,7 +60,7 @@ pnpm install
 ### Run without an API key (anonymous — free!)
 
 ```bash
-pnpm dev
+pnpm build && pnpm start
 ```
 
 > **No API key needed!** Developer uses `x-ai/grok-code-fast-1:optimized:free` by default — a free model available to everyone on the Kilo Gateway. Anonymous users get 200 requests per hour per IP.
@@ -81,10 +81,10 @@ Then the TUI starts and you can start chatting.
 echo "KILO_API_KEY=your_key_here" > .env.local
 ```
 
-3. Start the app:
+3. Build and start the app:
 
 ```bash
-pnpm dev
+pnpm build && pnpm start
 ```
 
 With a key you get access to all 500+ models — Anthropic Claude, OpenAI GPT, Google Gemini, DeepSeek, Mistral, Grok, and more.
@@ -118,6 +118,18 @@ With a key you get access to all 500+ models — Anthropic Claude, OpenAI GPT, G
 | `--model` | Model ID to use (default: `x-ai/grok-code-fast-1:optimized:free`) | `--model anthropic/claude-sonnet-4.6` |
 | `--session` | Resume a previous session by ID | `--session abc123-def456` |
 
+### Changing Models
+
+Pass any model ID from the [Kilo Gateway models list](https://kilo.ai/docs/gateway/models-and-providers):
+
+```bash
+pnpm build && pnpm start -- --model nvidia/nemotron-3-super-120b-a12b:free
+pnpm build && pnpm start -- --model anthropic/claude-sonnet-4.6
+pnpm build && pnpm start -- --model openai/gpt-5.4-mini
+```
+
+The `--` separates pnpm's own flags from the flags passed to your script.
+
 ### Resuming a Session
 
 ```bash
@@ -125,7 +137,7 @@ With a key you get access to all 500+ models — Anthropic Claude, OpenAI GPT, G
 ls ~/.developer/sessions/
 
 # Resume one
-pnpm dev --session <session-id-from-filename>
+pnpm build && pnpm start -- --session <session-id-from-filename>
 ```
 
 The session ID is the filename (minus `.json`). All messages from the previous conversation will be loaded into context.
@@ -206,9 +218,10 @@ Developer is built to be resilient in production use:
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start in watch mode with `tsx` (hot reload) |
+| `pnpm dev` | Start in watch mode with `tsx` (may not work on all terminals) |
 | `pnpm build` | Compile TypeScript to `dist/` |
 | `pnpm start` | Run the compiled production build (`node dist/index.js`) |
+| `pnpm build && pnpm start` | **Recommended** — build + run in one go |
 | `pnpm test` | Run all tests (vitest) |
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm typecheck` | TypeScript type checking (`tsc --noEmit`) |
