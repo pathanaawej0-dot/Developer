@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "agent": "tsx cli/agent.ts"
   },
   "dependencies": {
     "glob": "^11.0.0",
