@@ -19,7 +19,6 @@ const App: FC<AppProps> = ({ eventBus, modelName = "deepseek-v4-flash" }) => {
   const [status, setStatus] = useState<AgentStatus>("idle");
   const [toolName, setToolName] = useState<string | undefined>();
   const [tokenCount, setTokenCount] = useState(0);
-  const [toolCardsSignal, setToolCardsSignal] = useState(0);
 
   useLayoutEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -66,20 +65,15 @@ const App: FC<AppProps> = ({ eventBus, modelName = "deepseek-v4-flash" }) => {
     eventBus.emit("agent:thinking", { message: value });
   };
 
-  const handleToggleCards = () => {
-    setToolCardsSignal((v) => v + 1);
-  };
-
   return (
     <EventBusProvider bus={eventBus}>
       <Box flexDirection="column" height="100%">
         <Box flexGrow={1}>
-          <MessageList toggleAllSignal={toolCardsSignal} />
+          <MessageList />
         </Box>
         <PromptInput
           onSubmit={handleSubmit}
           disabled={isBusy(status)}
-          onToggleCards={handleToggleCards}
         />
         <StatusBar
           modelName={modelName}

@@ -66,7 +66,7 @@ describe("App", () => {
     stdin.write("\r");
   });
 
-  it("does not crash on Ctrl+O toggle", () => {
+  it("does not crash on Ctrl+O (no-op)", () => {
     const bus = createEventBus();
     const { stdin, lastFrame } = render(<App eventBus={bus} />);
 

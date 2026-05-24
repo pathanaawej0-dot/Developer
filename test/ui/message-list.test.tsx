@@ -21,22 +21,6 @@ describe("MessageList", () => {
     expect(frame).toContain("hello from user");
   });
 
-  it("accepts toggleAllSignal prop without useInput", () => {
-    const bus = createEventBus();
-    const { lastFrame } = render(
-      <EventBusProvider bus={bus}>
-        <MessageList toggleAllSignal={1} />
-      </EventBusProvider>,
-    );
-
-    act(() => {
-      bus.emit("agent:thinking", { message: "hello" });
-    });
-
-    const frame = lastFrame();
-    expect(frame).toContain("hello");
-  });
-
   it("renders tool cards and assistant messages from events", () => {
     const bus = createEventBus();
     const { lastFrame } = render(

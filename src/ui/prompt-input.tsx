@@ -5,7 +5,6 @@ interface PromptInputProps {
   onSubmit: (value: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  onToggleCards?: () => void;
 }
 
 function parseInput(data: string) {
@@ -53,7 +52,7 @@ function parseInput(data: string) {
   return { input: data, key };
 }
 
-export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, placeholder = "Ask me anything...", onToggleCards }) => {
+export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, placeholder = "Ask me anything..." }) => {
   const [displayValue, setDisplayValue] = useState("");
   const valueRef = useRef("");
   const { setRawMode, internal_eventEmitter } = useStdin();
@@ -82,11 +81,6 @@ export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, 
         return;
       }
 
-      if (key.ctrl && data === "\x0f") {
-        onToggleCards?.();
-        return;
-      }
-
       if (key.backspace || key.delete) {
         valueRef.current = valueRef.current.slice(0, -1);
         setDisplayValue(valueRef.current);
@@ -105,7 +99,7 @@ export const PromptInput: FC<PromptInputProps> = ({ onSubmit, disabled = false, 
       internal_eventEmitter?.removeListener("input", handleData);
       setRawMode(false);
     };
-  }, [disabled, onSubmit, onToggleCards, setRawMode, internal_eventEmitter]);
+  }, [disabled, onSubmit, setRawMode, internal_eventEmitter]);
 
   return (
     <Box>

@@ -88,28 +88,4 @@ describe("PromptInput", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onToggleCards on Ctrl+O", () => {
-    const onSubmit = vi.fn();
-    const onToggleCards = vi.fn();
-    const { stdin } = render(
-      <PromptInput onSubmit={onSubmit} onToggleCards={onToggleCards} />,
-    );
-
-    stdin.write("\x0f");
-
-    expect(onToggleCards).toHaveBeenCalledTimes(1);
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it("does not call onToggleCards for regular input", () => {
-    const onSubmit = vi.fn();
-    const onToggleCards = vi.fn();
-    const { stdin } = render(
-      <PromptInput onSubmit={onSubmit} onToggleCards={onToggleCards} />,
-    );
-
-    stdin.write("hello");
-
-    expect(onToggleCards).not.toHaveBeenCalled();
-  });
 });

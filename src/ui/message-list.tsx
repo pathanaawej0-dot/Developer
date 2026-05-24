@@ -2,12 +2,8 @@ import { Box } from "ink";
 import { useState, useLayoutEffect, type FC } from "react";
 import { useEventBus } from "../event-bus/index.js";
 import { Message } from "./message.js";
-import { ToolCard, ToolCardToggleProvider } from "./tool-card.js";
+import { ToolCard } from "./tool-card.js";
 import type { ToolStatus } from "./tool-card.js";
-
-interface MessageListProps {
-  toggleAllSignal?: number;
-}
 
 type DisplayItem =
   | { kind: "user"; content: string }
@@ -16,7 +12,7 @@ type DisplayItem =
 
 let toolIdCounter = 0;
 
-export const MessageList: FC<MessageListProps> = ({ toggleAllSignal = 0 }) => {
+export const MessageList: FC = () => {
   const bus = useEventBus();
   const [items, setItems] = useState<DisplayItem[]>([]);
 
@@ -90,32 +86,30 @@ export const MessageList: FC<MessageListProps> = ({ toggleAllSignal = 0 }) => {
   }, [bus]);
 
   return (
-    <ToolCardToggleProvider value={toggleAllSignal}>
-      <Box flexDirection="column">
-        {items.map((item, i) => {
-          switch (item.kind) {
-            case "user":
-              return <Message key={`u-${i}`} message={{ role: "user", content: item.content }} />;
-            case "assistant":
-              return (
-                <Message
-                  key={`a-${i}`}
-                  message={{ role: "assistant", content: item.content }}
-                />
-              );
-            case "tool":
-              return (
-                <ToolCard
-                  key={item.id}
-                  name={item.name}
-                  status={item.status}
-                  args={item.args}
-                  output={item.output}
-                />
-              );
-          }
-        })}
-      </Box>
-    </ToolCardToggleProvider>
+    <Box flexDirection="column">
+      {items.map((item, i) => {
+        switch (item.kind) {
+          case "user":
+            return <Message key={`u-${i}`} message={{ role: "user", content: item.content }} />;
+          case "assistant":
+            return (
+              <Message
+                key={`a-${i}`}
+                message={{ role: "assistant", content: item.content }}
+              />
+            );
+          case "tool":
+            return (
+              <ToolCard
+                key={item.id}
+                name={item.name}
+                status={item.status}
+                args={item.args}
+                output={item.output}
+              />
+            );
+        }
+      })}
+    </Box>
   );
 };
