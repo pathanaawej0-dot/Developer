@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.tsx",
     "build": "tsc",
-    "start": "node --env-file .env.local dist/index.js",
+    "start": "if exist .env.local (node --env-file .env.local dist/index.js) else node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
